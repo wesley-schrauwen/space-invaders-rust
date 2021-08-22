@@ -2,8 +2,11 @@
 
 use bevy::prelude::*;
 
-const GAME_WINDOW: (i32, i32) = (800, 600);
+// 64x64
 const PLAYER_SPRITE: &str = "player_1.png";
+
+struct ASSETS {
+}
 
 fn main() {
     App::build()
@@ -30,24 +33,21 @@ fn startup(
     // reposition window to center
     let mut window = windows.get_primary_mut().unwrap();
 
-    let window_height = window.height() as i32;
-    let window_width = window.width() as i32;
+    let window_height = window.height();
+    let window_width = window.width();
 
-    window.set_position(
-            IVec2::new(
-                (window_height / 2) - (GAME_WINDOW.0 / 2),
-                (window_width / 2) - (GAME_WINDOW.1 / 2)
-            )
-        );
+    window.set_position(IVec2::new(0, 0));
 
     // player
+    // point of origin is the center of the screen not top left
     commands.spawn_bundle(SpriteBundle {
         material: assets.add(asset_server.load(PLAYER_SPRITE).into()),
-        // transform: Transform {
-        //     translation: Vec3::new(),
-        //     rotation: Default::default(),
-        //     scale: Default::default()
-        // },
+        transform: Transform {
+            // 32.0 is half the size of the raw sprite
+            // 5.0 for padding purposes
+            translation: Vec3::new(0.0, -window_height / 2.0 + 32.0 + 5.0, 0.0),
+            ..Default::default()
+        },
         ..Default::default()
     });
 }
