@@ -136,35 +136,28 @@ fn player_shoot(
     if let Ok((mut transform, mut player_can_fire, _)) = query.single_mut() {
         if player_can_fire.0 && keyboard_input.pressed(KeyCode::Space) {
 
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.player_laser.clone(),
-                transform: Transform {
-                    translation: Vec3::new(
-                        transform.translation.x + 20.0,
-                        // 8 pixels for padding
-                        transform.translation.y + 6.0,
-                        0.0
-                    ),
-                    scale: Vec3::new(0.4, 0.5, 0.5),
-                    ..Default::default()
-                },
-                ..Default::default()
-            }).insert(Laser).insert(Speed::default());
+            let gun_x_offset = 20.0;
+            let gun_y_coords: f32 = transform.translation.y + 6.0;
 
-            commands.spawn_bundle(SpriteBundle {
-                material: materials.player_laser.clone(),
-                transform: Transform {
-                    translation: Vec3::new(
-                        transform.translation.x - 20.0,
-                        // 8 pixels for padding
-                        transform.translation.y + 6.0,
-                        0.0
-                    ),
-                    scale: Vec3::new(0.4, 0.5, 0.5),
+            let mut spawn_lasers = |x_offset: &f32| {
+                commands.spawn_bundle(SpriteBundle {
+                    material: materials.player_laser.clone(),
+                    transform: Transform {
+                        translation: Vec3::new(
+                            transform.translation.x + x_offset,
+                            gun_y_coords,
+                            0.0
+                        ),
+                        scale: Vec3::new(0.4, 0.5, 0.5),
+                        ..Default::default()
+                    },
                     ..Default::default()
-                },
-                ..Default::default()
-            }).insert(Laser).insert(Speed::default());
+                }).insert(Laser).insert(Speed::default());
+            };
+
+
+            spawn_lasers(&gun_x_offset);
+            spawn_lasers(&-gun_x_offset);
 
             // this is a mutable reference so when we change this it will change the correct entities condition
             player_can_fire.0 = false;
