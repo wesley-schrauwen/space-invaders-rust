@@ -23,8 +23,9 @@ struct GameWindowSize {
 
 struct Player;
 struct Laser;
-
+struct PlayerCanFire(bool);
 struct Speed(f32);
+
 impl Default for Speed {
     fn default() -> Self {
         Self(500.0)
@@ -100,7 +101,7 @@ fn spawn_player(
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Player).insert(Speed::default());
+    }).insert(Player).insert(Speed::default()).insert(PlayerCanFire(true));
 }
 
 fn player_movement(
@@ -130,17 +131,18 @@ fn player_shoot(
     mut commands: Commands,
     materials: Res<MaterialManifest>,
     keyboard_input: Res<Input<KeyCode>>,
-    mut query: Query<(&mut Transform, With<Player>)>
+    mut query: Query<(&mut Transform, &mut PlayerCanFire, With<Player>)>
 ) {
-    if let Ok((mut transform, _)) = query.single_mut() {
-        if keyboard_input.pressed(KeyCode::Space) {
+    if let Ok((mut transform, mut player_can_fire, _)) = query.single_mut() {
+        if player_can_fire.0 && keyboard_input.pressed(KeyCode::Space) {
+
             commands.spawn_bundle(SpriteBundle {
                 material: materials.player_laser.clone(),
                 transform: Transform {
                     translation: Vec3::new(
-                        transform.translation.x,
+                        transform.translation.x + 20.0,
                         // 8 pixels for padding
-                        transform.translation.y + 8.0,
+                        transform.translation.y + 6.0,
                         0.0
                     ),
                     scale: Vec3::new(0.4, 0.5, 0.5),
@@ -148,6 +150,28 @@ fn player_shoot(
                 },
                 ..Default::default()
             }).insert(Laser).insert(Speed::default());
+
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.player_laser.clone(),
+                transform: Transform {
+                    translation: Vec3::new(
+                        transform.translation.x - 20.0,
+                        // 8 pixels for padding
+                        transform.translation.y + 6.0,
+                        0.0
+                    ),
+                    scale: Vec3::new(0.4, 0.5, 0.5),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }).insert(Laser).insert(Speed::default());
+
+            // this is a mutable reference so when we change this it will change the correct entities condition
+            player_can_fire.0 = false;
+        }
+
+        if keyboard_input.just_released(KeyCode::Space) && !player_can_fire.0 {
+            player_can_fire.0 = true;
         }
     }
 }
@@ -162,6 +186,8 @@ fn laser_movement(
 
         if y_coords > game_window_size.height  {
             commands.entity(laser_entity).despawn();
+        } else {
+            transform.translation.y = y_coords;
         }
     }
 }
