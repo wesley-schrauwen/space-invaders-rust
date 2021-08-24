@@ -5,13 +5,15 @@ use bevy::input::keyboard::KeyboardInput;
 
 // 64x64
 const PLAYER_SPRITE: &str = "player_1.png";
+const PLAYER_LASER: &str = "player_laser_1.png";
 // width * height
 const WINDOW_SIZE: (f32, f32) = (800.0, 600.0);
 // one tick every second
 const ENGINE_POLL_RATE: f32 = 1.0 / 60.0;
 
 struct MaterialManifest {
-    player_material: Handle<ColorMaterial>
+    player_material: Handle<ColorMaterial>,
+    player_laser: Handle<ColorMaterial>
 }
 
 struct GameWindowSize {
@@ -20,8 +22,10 @@ struct GameWindowSize {
 }
 
 struct Player;
-struct PlayerSpeed(f32);
-impl Default for PlayerSpeed {
+struct Laser;
+
+struct Speed(f32);
+impl Default for Speed {
     fn default() -> Self {
         Self(500.0)
     }
@@ -43,6 +47,8 @@ fn main() {
             SystemStage::single(spawn_player.system())
         )
         .add_system(player_movement.system())
+        .add_system(player_shoot.system())
+        .add_system(laser_movement.system())
         .run();
 }
 
@@ -56,7 +62,8 @@ fn startup(
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
     commands.insert_resource(MaterialManifest {
-        player_material: assets.add(asset_server.load(PLAYER_SPRITE).into())
+        player_material: assets.add(asset_server.load(PLAYER_SPRITE).into()),
+        player_laser: assets.add(asset_server.load(PLAYER_LASER).into())
     });
 
     // reposition window to center
@@ -93,13 +100,13 @@ fn spawn_player(
             ..Default::default()
         },
         ..Default::default()
-    }).insert(Player).insert(PlayerSpeed::default());
+    }).insert(Player).insert(Speed::default());
 }
 
 fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
     game_window_size: Res<GameWindowSize>,
-    mut query: Query<(&PlayerSpeed, &mut Transform, With<Player>)>
+    mut query: Query<(&Speed, &mut Transform, With<Player>)>
 ) {
     // handles block if single_mut is OK, no real restriction on number of players
     if let Ok((player_speed, mut transform, player)) = query.single_mut() {
@@ -115,6 +122,46 @@ fn player_movement(
 
         if x_coords.abs() < game_window_size.width.clone() / 2.0 - 32.0 {
             transform.translation.x = x_coords
+        }
+    }
+}
+
+fn player_shoot(
+    mut commands: Commands,
+    materials: Res<MaterialManifest>,
+    keyboard_input: Res<Input<KeyCode>>,
+    mut query: Query<(&mut Transform, With<Player>)>
+) {
+    if let Ok((mut transform, _)) = query.single_mut() {
+        if keyboard_input.pressed(KeyCode::Space) {
+            commands.spawn_bundle(SpriteBundle {
+                material: materials.player_laser.clone(),
+                transform: Transform {
+                    translation: Vec3::new(
+                        transform.translation.x,
+                        // 8 pixels for padding
+                        transform.translation.y + 8.0,
+                        0.0
+                    ),
+                    scale: Vec3::new(0.4, 0.5, 0.5),
+                    ..Default::default()
+                },
+                ..Default::default()
+            }).insert(Laser).insert(Speed::default());
+        }
+    }
+}
+
+fn laser_movement(
+    mut commands: Commands,
+    game_window_size: Res<GameWindowSize>,
+    mut query: Query<(Entity, &mut Transform, &Speed, With<Laser>)>
+) {
+    for (laser_entity, mut transform, speed, _) in query.iter_mut() {
+        let y_coords = transform.translation.y + speed.0 * ENGINE_POLL_RATE;
+
+        if y_coords > game_window_size.height  {
+            commands.entity(laser_entity).despawn();
         }
     }
 }
