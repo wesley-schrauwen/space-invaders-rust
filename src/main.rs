@@ -2,15 +2,18 @@
 
 mod player;
 mod laser;
+mod enemy;
 
 use bevy::prelude::*;
 use bevy::input::keyboard::KeyboardInput;
 use crate::player::PlayerPlugin;
 use crate::laser::LaserPlugin;
+use crate::enemy::EnemyPlugin;
 
 // 64x64
 const PLAYER_SPRITE: &str = "player_1.png";
 const PLAYER_LASER: &str = "player_laser_1.png";
+const ENEMY_SPRITE: &str = "alien_1.png";
 // width * height
 const WINDOW_SIZE: (f32, f32) = (800.0, 600.0);
 // one tick every second
@@ -18,7 +21,8 @@ const ENGINE_POLL_RATE: f32 = 1.0 / 60.0;
 
 struct MaterialManifest {
     player_material: Handle<ColorMaterial>,
-    player_laser: Handle<ColorMaterial>
+    player_laser: Handle<ColorMaterial>,
+    enemy_material: Handle<ColorMaterial>
 }
 
 struct GameWindowSize {
@@ -26,6 +30,7 @@ struct GameWindowSize {
     height: f32
 }
 
+struct ActiveEnemies(u8);
 struct Speed(f32);
 
 impl Default for Speed {
@@ -43,9 +48,11 @@ fn main() {
             title: "Space Invaders Rust".to_string(),
             ..Default::default()
         })
+        .insert_resource(ActiveEnemies(0))
         .add_plugins(DefaultPlugins)
         .add_plugin(PlayerPlugin)
         .add_plugin(LaserPlugin)
+        .add_plugin(EnemyPlugin)
         .add_startup_system(startup.system())
         .run();
 }
@@ -61,7 +68,8 @@ fn startup(
 
     commands.insert_resource(MaterialManifest {
         player_material: assets.add(asset_server.load(PLAYER_SPRITE).into()),
-        player_laser: assets.add(asset_server.load(PLAYER_LASER).into())
+        player_laser: assets.add(asset_server.load(PLAYER_LASER).into()),
+        enemy_material: assets.add(asset_server.load(ENEMY_SPRITE).into())
     });
 
     // reposition window to center
