@@ -18,6 +18,7 @@ use crate::collision::CollisionPlugin;
 const PLAYER_SPRITE: &str = "player_1.png";
 const PLAYER_LASER: &str = "player_laser_1.png";
 const ENEMY_SPRITE: &str = "alien_1.png";
+const EXPLOSION: &str = "explosion.png";
 // width * height
 const WINDOW_SIZE: (f32, f32) = (800.0, 600.0);
 // one tick every second
@@ -26,7 +27,8 @@ const ENGINE_POLL_RATE: f32 = 1.0 / 60.0;
 struct MaterialManifest {
     player_material: Handle<ColorMaterial>,
     player_laser: Handle<ColorMaterial>,
-    enemy_material: Handle<ColorMaterial>
+    enemy_material: Handle<ColorMaterial>,
+    explosion: Handle<TextureAtlas>
 }
 
 struct GameWindowSize {
@@ -66,15 +68,20 @@ fn startup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut assets: ResMut<Assets<ColorMaterial>>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut windows: ResMut<Windows>,
 ) {
     // camera
     commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 
+    let explosion_grid = asset_server.load(EXPLOSION);
+    let explosion_atlas = TextureAtlas::from_grid(explosion_grid, Vec2::new(192.0, 192.0), 5, 2);
+
     commands.insert_resource(MaterialManifest {
         player_material: assets.add(asset_server.load(PLAYER_SPRITE).into()),
         player_laser: assets.add(asset_server.load(PLAYER_LASER).into()),
-        enemy_material: assets.add(asset_server.load(ENEMY_SPRITE).into())
+        enemy_material: assets.add(asset_server.load(ENEMY_SPRITE).into()),
+        explosion: texture_atlases.add(explosion_atlas)
     });
 
     // reposition window to center
