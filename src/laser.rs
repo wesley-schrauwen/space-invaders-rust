@@ -24,7 +24,10 @@ fn laser_movement(
     game_window_size: Res<GameWindowSize>,
     mut query: Query<(Entity, &mut Transform, &Speed, With<Laser>)>
 ) {
-    for (laser_entity, mut transform, speed, _) in query.iter_mut() {
+    for (laser_entity, mut transform, speed, laser) in query.iter_mut() {
+
+        let entity: Entity = laser_entity;
+
         let y_coords = transform.translation.y + speed.0 * ENGINE_POLL_RATE;
 
         if y_coords > game_window_size.height  {

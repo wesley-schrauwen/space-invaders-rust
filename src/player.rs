@@ -93,7 +93,9 @@ fn player_shoot(
                         ..Default::default()
                     },
                     ..Default::default()
-                }).insert(Laser).insert(Speed::default());
+                })
+                    .insert(Laser)
+                    .insert(Speed::default());
             };
 
             spawn_lasers(&gun_x_offset);
